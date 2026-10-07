@@ -6,6 +6,20 @@ st.set_page_config(page_title="Crop Recommendation", page_icon="🌾", layout="w
 
 model = joblib.load("crop_model.pkl")
 
+EMOJI = {
+    "rice": "🌾", "maize": "🌽", "banana": "🍌", "mango": "🥭",
+    "grapes": "🍇", "watermelon": "🍉", "muskmelon": "🍈", "apple": "🍎",
+    "orange": "🍊", "coconut": "🥥", "coffee": "☕", "cotton": "☁️",
+    "jute": "🌿", "papaya": "🧡", "pomegranate": "🔴",
+}
+
+with st.sidebar:
+    st.header("ℹ️ About")
+    st.write("**Model:** Random Forest")
+    st.write("**Test accuracy:** 99.5%")
+    st.write("**Crops:** 22 | **Features:** 7")
+    st.caption("ML Lab Project")
+
 st.title("🌾 Crop Recommendation System")
 st.caption("Mitti aur mausam ki details daalo, model sahi fasal batayega.")
 
@@ -29,5 +43,15 @@ if st.button("🌱 Fasal batao", type="primary"):
         [[N, P, K, temperature, humidity, ph, rainfall]],
         columns=["N", "P", "K", "temperature", "humidity", "ph", "rainfall"],
     )
-    pred = model.predict(X_new)[0]
-    st.success(f"Recommended crop: **{pred.title()}**")
+    proba = model.predict_proba(X_new)[0]
+    top3 = proba.argsort()[::-1][:3]
+
+    best = model.classes_[top3[0]]
+    st.success(f"{EMOJI.get(best, '🌱')} Best choice: **{best.title()}**")
+
+    st.subheader("Top 3 recommendations")
+    cols = st.columns(3)
+    for col, i in zip(cols, top3):
+        name = model.classes_[i]
+        col.metric(f"{EMOJI.get(name, '🌱')} {name.title()}", f"{proba[i] * 100:.0f}%")
+        col.progress(float(proba[i]))
